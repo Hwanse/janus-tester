@@ -1,0 +1,27 @@
+version: '2.1'
+
+services:
+  janus-gateway:
+    image: 'canyan/janus-gateway:master'
+    restart: always
+    command: ["/usr/local/bin/janus", "-F", "/usr/local/etc/janus"]
+    ports:
+      - "8188:8188"
+      - "8088:8088"
+      - "8089:8089"
+      - "8889:8889"
+      - "8000:8000"
+      - "7088:7088"
+      - "7089:7089"
+#    volumes:
+#      - "./config/janus.jcfg:/usr/local/etc/janus/janus.jcfg"
+#      - "./config/janus.eventhandler.sampleevh.jcfg:/usr/local/etc/janus/janus.eventhandler.sampleevh.jcfg"
+
+  web_demo:
+    user: "root"
+    image: httpd:alpine
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - ./web:/usr/local/apache2/htdocs
