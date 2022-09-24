@@ -1,6 +1,6 @@
 // Package core is a Golang implementation of the Janus API, used to interact
 // with the Janus WebRTC Gateway.
-package core
+package janus
 
 import (
 	"bytes"
@@ -25,6 +25,13 @@ func newRequest(method string) (map[string]interface{}, chan interface{}) {
 	return req, make(chan interface{})
 }
 
+func newAdminRequest(method string) (map[string]interface{}, chan interface{}) {
+	req := make(map[string]interface{}, 8)
+	req["janus"] = method
+	req["admin_secret"] = AdminSecret
+	return req, make(chan interface{})
+}
+
 // Gateway represents a connection to an instance of the Janus Gateway.
 type Gateway struct {
 	// Sessions is a map of the currently active sessions to the gateway.
@@ -43,7 +50,11 @@ type Gateway struct {
 	debug            bool
 }
 
-const JanusSubProtocol = "janus-protocol"
+const (
+	WebsocketSubProtocol      = "janus-protocol"
+	WebsocketAdminSubProtocol = "janus-admin-protocol"
+	AdminSecret               = "janusoverlord"
+)
 
 func generateTransactionId() xid.ID {
 	return xid.New()
@@ -51,10 +62,9 @@ func generateTransactionId() xid.ID {
 
 // WsConnect initiates a websocket connection with the Janus Gateway
 func WsConnect(wsURL string) (*Gateway, error) {
-	websocket.DefaultDialer.Subprotocols = []string{JanusSubProtocol}
+	websocket.DefaultDialer.Subprotocols = []string{WebsocketSubProtocol}
 
 	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
-
 	if err != nil {
 		return nil, err
 	}
@@ -192,6 +202,7 @@ func (gateway *Gateway) recv() {
 			fmt.Printf("json.Unmarshal: %s\n", err)
 			continue // Decode error
 		}
+		ifSuccessMsgAppendJsonData(msg, data)
 
 		var transactionUsed bool
 		if base.ID != "" {
@@ -294,4 +305,11 @@ func (gateway *Gateway) Create() (*Session, error) {
 	gateway.Unlock()
 
 	return session, nil
+}
+
+func ifSuccessMsgAppendJsonData(msg interface{}, response []byte) {
+	switch msg := msg.(type) {
+	case *SuccessMsg:
+		msg.response = response
+	}
 }
