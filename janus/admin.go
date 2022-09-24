@@ -1,8 +1,10 @@
-package core
+package janus
 
 import (
+	"errors"
 	"github.com/gorilla/websocket"
 	"github.com/rs/xid"
+	"github.com/tidwall/gjson"
 )
 
 func WsAdminConnect(wsURL string) (*Gateway, error) {
@@ -27,14 +29,18 @@ func WsAdminConnect(wsURL string) (*Gateway, error) {
 	return gateway, nil
 }
 
-func (gateway *Gateway) GetStatus() (*SuccessMsg, error) {
+func (gateway *Gateway) GetStatus() (interface{}, error) {
 	req, ch := newAdminRequest("get_status")
 	gateway.send(req, ch)
 
 	msg := <-ch
 	switch msg := msg.(type) {
 	case *SuccessMsg:
-		return msg, nil
+		if !gjson.GetBytes(msg.response, "status").Exists() {
+			return nil, errors.New("get_status response not contains status field")
+		}
+		statusInfo := gjson.GetBytes(msg.response, "status").Value()
+		return statusInfo, nil
 	case *ErrorMsg:
 		return nil, msg
 	}

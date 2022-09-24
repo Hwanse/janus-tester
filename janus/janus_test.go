@@ -1,4 +1,4 @@
-package core
+package janus
 
 import (
 	"fmt"
@@ -47,5 +47,6 @@ func Test_AdminConnect(t *testing.T) {
 		t.Log(err)
 		return
 	}
+
 	t.Log(msg)
 }

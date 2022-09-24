@@ -17,7 +17,7 @@
 // both Session and Handle fields defined. They will be passed to the Events
 // channel of the related Handle and can be read from there.
 
-package core
+package janus
 
 var msgtypes = map[string]func() interface{}{
 	"error":       func() interface{} { return &ErrorMsg{} },
@@ -58,6 +58,7 @@ type SuccessMsg struct {
 	PluginData PluginData
 	Session    uint64 `json:"session_id"`
 	Handle     uint64 `json:"sender"`
+	response   []byte
 }
 
 type SuccessData struct {
