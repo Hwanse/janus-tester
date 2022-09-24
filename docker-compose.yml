@@ -6,16 +6,15 @@ services:
     restart: always
     command: ["/usr/local/bin/janus", "-F", "/usr/local/etc/janus"]
     ports:
-      - "8188:8188"
-      - "8088:8088"
-      - "8089:8089"
-      - "8889:8889"
-      - "8000:8000"
-      - "7088:7088"
-      - "7089:7089"
-#    volumes:
+      - "8188:8188" # websocket port
+      - "7188:7188" # admin websocket port
+      - "8088:8088" # http port
+      - "8089:8089" # https port
+      - "7088:7088" # admin http port
+    volumes:
 #      - "./config/janus.jcfg:/usr/local/etc/janus/janus.jcfg"
 #      - "./config/janus.eventhandler.sampleevh.jcfg:/usr/local/etc/janus/janus.eventhandler.sampleevh.jcfg"
+      - "./config/janus.transport.websockets.jcfg:/usr/local/etc/janus/janus.transport.websockets.jcfg"
 
   web_demo:
     user: "root"

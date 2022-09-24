@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	JanusHost          = "localhost"
-	JanusWebsocketPort = "8188"
+	JanusHost               = "127.0.0.1"
+	JanusWebsocketPort      = "8188"
+	JanusAdminWebsocketPort = "7188"
 )
 
 func Test_Connect(t *testing.T) {
@@ -31,4 +32,20 @@ func Test_Connect(t *testing.T) {
 	}
 	t.Log(sess)
 	t.Log("connect")
+}
+
+func Test_AdminConnect(t *testing.T) {
+	adminUrl := fmt.Sprintf("ws://%s:%s/", JanusHost, JanusAdminWebsocketPort)
+	adminClient, err := WsAdminConnect(adminUrl)
+	if err != nil {
+		t.Fail()
+		return
+	}
+	msg, err := adminClient.GetStatus()
+	if err != nil {
+		t.Fail()
+		t.Log(err)
+		return
+	}
+	t.Log(msg)
 }
