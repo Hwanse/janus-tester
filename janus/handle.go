@@ -1,4 +1,4 @@
-package core
+package janus
 
 // Handle represents a handle to a plugin instance on the Gateway.
 type Handle struct {

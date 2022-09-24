@@ -1,6 +1,6 @@
 // Package core is a Golang implementation of the Janus API, used to interact
 // with the Janus WebRTC Gateway.
-package core
+package janus
 
 import (
 	"bytes"
@@ -202,6 +202,7 @@ func (gateway *Gateway) recv() {
 			fmt.Printf("json.Unmarshal: %s\n", err)
 			continue // Decode error
 		}
+		ifSuccessMsgAppendJsonData(msg, data)
 
 		var transactionUsed bool
 		if base.ID != "" {
@@ -304,4 +305,11 @@ func (gateway *Gateway) Create() (*Session, error) {
 	gateway.Unlock()
 
 	return session, nil
+}
+
+func ifSuccessMsgAppendJsonData(msg interface{}, response []byte) {
+	switch msg := msg.(type) {
+	case *SuccessMsg:
+		msg.response = response
+	}
 }
