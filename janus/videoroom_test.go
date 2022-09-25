@@ -38,16 +38,66 @@ func Test_CreateRoom(t *testing.T) {
 	}
 }
 
-func Test_DestroyRoom(t *testing.T) {
+func Test_Exists_False(t *testing.T) {
 	handle, err := attachVideoRoomHandle()
+	defer handle.Detach()
 	assert.NoError(t, err)
 
-	roomId := uint64(12341234)
-	insertTestRoom(handle, roomId)
+	roomID := uint64(1111111)
+
+	req := &ExistsRoomRequest{
+		Request: TypeExists,
+		RoomID:  roomID,
+	}
+
+	exists, err := handle.ExistsRoom(req)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+
+	assert.False(t, exists)
+}
+
+func Test_Exists_True(t *testing.T) {
+	handle, err := attachVideoRoomHandle()
+	defer handle.Detach()
+	assert.NoError(t, err)
+
+	roomID := uint64(2222222)
+	insertTestRoom(handle, roomID)
+
+	req := &ExistsRoomRequest{
+		Request: TypeExists,
+		RoomID:  roomID,
+	}
+
+	exists, err := handle.ExistsRoom(req)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+
+	assert.True(t, exists)
+
+	err = cleanRoom(handle, roomID)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+}
+
+func Test_DestroyRoom(t *testing.T) {
+	handle, err := attachVideoRoomHandle()
+	defer handle.Detach()
+	assert.NoError(t, err)
+
+	roomID := uint64(12341234)
+	insertTestRoom(handle, roomID)
 
 	req := &DestroyRoomRequest{
 		Request: TypeDestroy,
-		RoomID:  roomId,
+		RoomID:  roomID,
 	}
 	err = handle.DestroyRoom(req)
 	if err != nil {
