@@ -24,6 +24,25 @@ func (handle *Handle) CreateRoom(req *CreateRoomRequest) error {
 	return nil
 }
 
+func (handle *Handle) ExistsRoom(req *ExistsRoomRequest) (bool, error) {
+	msg, err := handle.Request(req)
+	if err != nil {
+		return false, WrapError("failed to exists room", err.Error())
+	}
+
+	response := ExistsRoomResponse{}
+	err = mapstructure.Decode(msg.PluginData.Data, &response)
+	if err != nil {
+		return false, err
+	}
+
+	if isUnexpectedResponse(response.VideoRoomResponseType.Type, Success) {
+		return false, WrapError("failed to exists room", response.Error())
+	}
+
+	return response.IsExists, nil
+}
+
 func (handle *Handle) DestroyRoom(req *DestroyRoomRequest) error {
 	msg, err := handle.Request(req)
 	if err != nil {
