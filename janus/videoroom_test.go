@@ -25,17 +25,12 @@ func Test_CreateRoom(t *testing.T) {
 			BitrateCap:          false,
 		},
 	}
+
 	err = handle.CreateRoom(request)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
+	assert.NoError(t, err)
 
 	err = cleanRoom(handle, RoomID)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
+	assert.NoError(t, err)
 }
 
 func Test_Exists_False(t *testing.T) {
@@ -51,10 +46,7 @@ func Test_Exists_False(t *testing.T) {
 	}
 
 	exists, err := handle.ExistsRoom(req)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
+	assert.NoError(t, err)
 
 	assert.False(t, exists)
 }
@@ -73,17 +65,34 @@ func Test_Exists_True(t *testing.T) {
 	}
 
 	exists, err := handle.ExistsRoom(req)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-
+	assert.NoError(t, err)
 	assert.True(t, exists)
 
 	err = cleanRoom(handle, roomID)
-	if err != nil {
-		assert.NoError(t, err)
-		return
+	assert.NoError(t, err)
+}
+
+func Test_RoomList(t *testing.T) {
+	handle, err := attachVideoRoomHandle()
+	defer handle.Detach()
+	assert.NoError(t, err)
+
+	// insert room list for test
+	id := uint64(10000000)
+	idList := make([]uint64, 0)
+	for i := 1; i <= 5; i++ {
+		idList = append(idList, id+uint64(i))
+		insertTestRoom(handle, id+uint64(i))
+	}
+
+	roomList, err := handle.RoomList()
+	assert.NoError(t, err)
+
+	assert.NotNil(t, roomList)
+	assert.GreaterOrEqual(t, len(roomList), len(idList))
+
+	for _, id := range idList {
+		cleanRoom(handle, id)
 	}
 }
 
