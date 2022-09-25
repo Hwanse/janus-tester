@@ -5,14 +5,8 @@ import (
 	"testing"
 )
 
-const (
-	JanusHost               = "127.0.0.1"
-	JanusWebsocketPort      = "8188"
-	JanusAdminWebsocketPort = "7188"
-)
-
 func Test_Connect(t *testing.T) {
-	url := fmt.Sprintf("ws://%s:%s/", JanusHost, JanusWebsocketPort)
+	url := fmt.Sprintf("ws://%s:%s/", JanusLocalHost, JanusWebsocketPort)
 	client, err := WsConnect(url)
 	if err != nil {
 		t.Fail()
@@ -35,7 +29,7 @@ func Test_Connect(t *testing.T) {
 }
 
 func Test_AdminConnect(t *testing.T) {
-	adminUrl := fmt.Sprintf("ws://%s:%s/", JanusHost, JanusAdminWebsocketPort)
+	adminUrl := fmt.Sprintf("ws://%s:%s/", JanusLocalHost, JanusAdminWebsocketPort)
 	adminClient, err := WsAdminConnect(adminUrl)
 	if err != nil {
 		t.Fail()
