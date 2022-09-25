@@ -62,6 +62,44 @@ func (handle *Handle) DestroyRoom(req *DestroyRoomRequest) error {
 	return nil
 }
 
+func (handle *Handle) RoomList() ([]Room, error) {
+	req := &RoomListRequest{Request: TypeList}
+	msg, err := handle.Request(req)
+	if err != nil {
+		return nil, WrapError("failed to get all room list", err.Error())
+	}
+
+	response := RoomListResponse{}
+	err = mapstructure.Decode(msg.PluginData.Data, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	if isUnexpectedResponse(response.VideoRoomResponseType.Type, Success) {
+		return nil, WrapError("failed to get all room list", response.Error())
+	}
+
+	roomList, err := mapSliceConvertToRoomSlice(&response.List)
+	if err != nil {
+		return nil, err
+	}
+
+	return roomList, nil
+}
+
+func mapSliceConvertToRoomSlice(list *[]map[string]interface{}) ([]Room, error) {
+	roomList := make([]Room, 0)
+	for _, data := range *list {
+		room := Room{}
+		err := mapstructure.Decode(data, &room)
+		if err != nil {
+			return nil, err
+		}
+		roomList = append(roomList, room)
+	}
+	return roomList, nil
+}
+
 func isUnexpectedResponse(responseKey, successKey string) bool {
 	if responseKey != successKey {
 		return true
