@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -54,6 +55,10 @@ const (
 	WebsocketSubProtocol      = "janus-protocol"
 	WebsocketAdminSubProtocol = "janus-admin-protocol"
 	AdminSecret               = "janusoverlord"
+
+	JanusLocalHost          = "127.0.0.1"
+	JanusWebsocketPort      = "8188"
+	JanusAdminWebsocketPort = "7188"
 )
 
 func generateTransactionId() xid.ID {
@@ -197,8 +202,10 @@ func (gateway *Gateway) recv() {
 			continue
 		}
 
+		decoder := json.NewDecoder(strings.NewReader(string(data)))
+		decoder.UseNumber()
 		msg := typeFunc()
-		if err := json.Unmarshal(data, &msg); err != nil {
+		if err := decoder.Decode(&msg); err != nil {
 			fmt.Printf("json.Unmarshal: %s\n", err)
 			continue // Decode error
 		}
