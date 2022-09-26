@@ -4,21 +4,28 @@ import "fmt"
 
 const (
 	VideoRoomPluginName = "janus.plugin.videoroom"
+	TypePublisher       = "publisher"
+	TypeSubscriber      = "subscriber"
 
 	// Request
 	TypeCreate  = "create"
 	TypeDestroy = "destroy"
 	TypeExists  = "exists"
 	TypeList    = "list"
+	TypeJoin    = "join"
+	TypeLeave   = "leave"
 
 	// Response
 	TypeEvent          = "event"
 	Success            = "success"
+	OK                 = "ok"
 	SuccessCreateRoom  = "created"
 	SuccessDestroyRoom = "destroyed"
+	SuccessJoin        = "joined"
 )
 
 type VideoRoomRequestType string
+
 type VideoRoomResponseType struct {
 	Type string `mapstructure:"videoroom"`
 }
@@ -67,7 +74,35 @@ type Room struct {
 	DummyStreams        bool   `json:"dummy_streams,omitempty" mapstructure:"dummy_streams"`
 }
 
-// Request
+type Publisher struct {
+	FeedID           uint64 `mapstructure:"id"`
+	DisplayName      string `mapstructure:"display"`
+	IsDummyPublisher bool   `mapstructure:"dummy"`
+	Streams          []Stream
+	IsTalking        bool `mapstructure:"talking"`
+}
+
+// Attendee non-activate publisher
+type Attendee struct {
+	ID          uint64 `mapstructure:"id"`
+	DisplayName string `mapstructure:"display"`
+}
+
+// Stream Participant's stream info
+type Stream struct {
+	MediaType   string `mapstructure:"type"`
+	MIndex      int    `mapstructure:"mindex"`
+	MID         int    `mapstructure:"mid"`
+	IsDisabled  bool   `mapstructure:"disabled"`
+	Codec       string `mapstructure:"codec"`
+	Description string `mapstructure:"description"`
+	Moderated   bool   `mapstructure:"moderated"`
+	Simulcast   bool   `mapstructure:"simulcast"`
+	SVC         bool   `mapstructure:"svc"`
+	IsTalking   bool   `mapstructure:"talking"`
+}
+
+// Room API Request
 
 type CreateRoomRequest struct {
 	Request VideoRoomRequestType `json:"request"`
@@ -89,7 +124,22 @@ type DestroyRoomRequest struct {
 	Permanent bool                 `json:"permanent"`
 }
 
-// Response
+// Publisher API Request
+
+type JoinPublisherRequest struct {
+	Request     VideoRoomRequestType `json:"request"`
+	RoomID      uint64               `json:"room"`
+	PeerType    string               `json:"ptype"`
+	FeedID      uint64               `json:"id,omitempty"`
+	DisplayName string               `json:"display,omitempty"`
+	Token       string               `json:"token,omitempty"`
+}
+
+type LeaveRequest struct {
+	Request VideoRoomRequestType `json:"request"`
+}
+
+// Room API Response
 
 type CreateRoomResponse struct {
 	VideoRoomResponseType `mapstructure:",squash"`
@@ -107,7 +157,7 @@ type ExistsRoomResponse struct {
 
 type RoomListResponse struct {
 	VideoRoomResponseType `mapstructure:",squash"`
-	List                  []map[string]interface{}
+	List                  []Room
 	ErrorResponse         `mapstructure:",squash"`
 }
 
@@ -115,5 +165,24 @@ type DestroyRoomResponse struct {
 	VideoRoomResponseType `mapstructure:",squash"`
 	RoomID                uint64 `mapstructure:"room"`
 	Permanent             bool
+	ErrorResponse         `mapstructure:",squash"`
+}
+
+// Publisher API Response
+
+type JoinPublisherResponse struct {
+	VideoRoomResponseType `mapstructure:",squash"`
+	RoomID                uint64      `mapstructure:"room"`
+	RoomDescription       string      `mapstructure:"description,omitempty"`
+	FeedID                uint64      `mapstructure:"id"`
+	PrivateID             uint64      `mapstructure:"private_id"`
+	Publishers            []Publisher // Type에 맞게 변환됨
+	Attendees             []Attendee  // Type에 맞게 변환됨
+	ErrorResponse         `mapstructure:",squash"`
+}
+
+type LeavePublisherResponse struct {
+	VideoRoomResponseType `mapstructure:",squash"`
+	Leaving               string `mapstructure:"leaving"`
 	ErrorResponse         `mapstructure:",squash"`
 }

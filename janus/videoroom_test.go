@@ -8,6 +8,8 @@ import (
 
 const RoomID = uint64(123456789)
 
+// VideoRoom Room API Test
+
 func Test_CreateRoom(t *testing.T) {
 	handle, err := attachVideoRoomHandle()
 	defer handle.Detach()
@@ -109,10 +111,65 @@ func Test_DestroyRoom(t *testing.T) {
 		RoomID:  roomID,
 	}
 	err = handle.DestroyRoom(req)
-	if err != nil {
-		assert.NoError(t, err)
-		return
+	assert.NoError(t, err)
+}
+
+// VideoRoom Participant API Test
+
+func Test_JoinPublisher(t *testing.T) {
+	handle, err := attachVideoRoomHandle()
+	defer handle.Detach()
+	assert.NoError(t, err)
+
+	handle2, err := attachVideoRoomHandle()
+	defer handle2.Detach()
+
+	roomID := uint64(123333333)
+	insertTestRoom(handle, roomID)
+	defer cleanRoom(handle, roomID)
+
+	req := &JoinPublisherRequest{
+		Request:  TypeJoin,
+		RoomID:   roomID,
+		PeerType: TypePublisher,
 	}
+
+	response, err := handle.JoinPublisher(req)
+	response2, err2 := handle2.JoinPublisher(req)
+
+	assert.NoError(t, err)
+	assert.NoError(t, err2)
+	assert.NotNil(t, response)
+	assert.NotNil(t, response2)
+	assert.NotZero(t, response.FeedID)
+	assert.NotZero(t, response2.FeedID)
+	assert.Greater(t, len(response2.Attendees), 0)
+}
+
+func Test_LeavePublisher(t *testing.T) {
+	handle, err := attachVideoRoomHandle()
+	defer handle.Detach()
+	assert.NoError(t, err)
+
+	roomID := uint64(8343348921)
+	insertTestRoom(handle, roomID)
+	defer cleanRoom(handle, roomID)
+
+	joinReq := &JoinPublisherRequest{
+		Request:  TypeJoin,
+		RoomID:   roomID,
+		PeerType: TypePublisher,
+	}
+	response, err := handle.JoinPublisher(joinReq)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+	assert.NotZero(t, response.FeedID)
+
+	leaveReq := &LeaveRequest{TypeLeave}
+	err = handle.LeavePublisher(leaveReq)
+
+	assert.NoError(t, err)
 }
 
 func attachVideoRoomHandle() (*Handle, error) {
@@ -139,7 +196,8 @@ func insertTestRoom(handle *Handle, id uint64) error {
 	req := &CreateRoomRequest{
 		Request: TypeCreate,
 		Room: Room{
-			RoomID: id,
+			RoomID:        id,
+			NotifyJoining: true,
 		},
 	}
 

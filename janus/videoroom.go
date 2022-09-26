@@ -79,25 +79,7 @@ func (handle *Handle) RoomList() ([]Room, error) {
 		return nil, WrapError("failed to get all room list", response.Error())
 	}
 
-	roomList, err := mapSliceConvertToRoomSlice(&response.List)
-	if err != nil {
-		return nil, err
-	}
-
-	return roomList, nil
-}
-
-func mapSliceConvertToRoomSlice(list *[]map[string]interface{}) ([]Room, error) {
-	roomList := make([]Room, 0)
-	for _, data := range *list {
-		room := Room{}
-		err := mapstructure.Decode(data, &room)
-		if err != nil {
-			return nil, err
-		}
-		roomList = append(roomList, room)
-	}
-	return roomList, nil
+	return response.List, nil
 }
 
 func isUnexpectedResponse(responseKey, successKey string) bool {
