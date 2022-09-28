@@ -23,6 +23,7 @@ const (
 	SuccessCreateRoom  = "created"
 	SuccessDestroyRoom = "destroyed"
 	SuccessJoin        = "joined"
+	SuccessAttached    = "attached"
 )
 
 type VideoRoomRequestType string
@@ -38,6 +39,17 @@ type ErrorResponse struct {
 
 func (err *ErrorResponse) Error() string {
 	return fmt.Sprintf("error_code: %d, error_desc: %s", err.ErrorCode, err.ErrorDescription)
+}
+
+func isUnexpectedResponse(responseKey, expectKey string) bool {
+	if responseKey != expectKey {
+		return true
+	}
+	return false
+}
+
+func WrapError(description string, errText string) error {
+	return fmt.Errorf("%s : %s", description, errText)
 }
 
 type Room struct {
@@ -194,6 +206,10 @@ type JoinSubscriberRequest struct {
 	Streams   []Stream             `json:"streams,omitempty"`
 }
 
+type SubscribeStartRequest struct {
+	Request VideoRoomRequestType `json:"request"`
+}
+
 // Room API Response
 
 type CreateRoomResponse struct {
@@ -260,5 +276,18 @@ type JoinSubscriberResponse struct {
 	VideoRoomResponseType `mapstructure:",squash"`
 	RoomID                uint64 `mapstructure:"room"`
 	Streams               []SubscriberStreamInfo
+	Jsep                  map[string]interface{}
+	ErrorResponse         `mapstructure:",squash"`
+}
+
+type SubscribeStartResponse struct {
+	VideoRoomResponseType `mapstructure:",squash"`
+	Started               string `mapstructure:"started"`
+	ErrorResponse         `mapstructure:",squash"`
+}
+
+type LeaveSubscriberResponse struct {
+	VideoRoomResponseType `mapstructure:",squash"`
+	Left                  string `mapstructure:"left"`
 	ErrorResponse         `mapstructure:",squash"`
 }

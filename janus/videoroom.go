@@ -1,7 +1,6 @@
 package janus
 
 import (
-	"fmt"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -80,15 +79,4 @@ func (handle *Handle) RoomList() ([]Room, error) {
 	}
 
 	return response.List, nil
-}
-
-func isUnexpectedResponse(responseKey, successKey string) bool {
-	if responseKey != successKey {
-		return true
-	}
-	return false
-}
-
-func WrapError(description string, errText string) error {
-	return fmt.Errorf("%s : %s", description, errText)
 }
