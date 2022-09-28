@@ -20,6 +20,22 @@ func (handle *Handle) JoinPublisher(req *JoinPublisherRequest) (*JoinPublisherRe
 	return &response, nil
 }
 
+func (handle *Handle) Publish(req *PublishRequest, jsep interface{}) (interface{}, error) {
+	msg, err := handle.Message(req, jsep)
+	if err != nil {
+		return nil, WrapError("failed to publish", err.Error())
+	}
+
+	response := PublishResponse{}
+	err = mapstructure.Decode(msg.Plugindata.Data, &response)
+	if isUnexpectedResponse(response.VideoRoomResponseType.Type, TypeEvent) ||
+		isUnexpectedResponse(response.Configured, OK) {
+		return nil, WrapError("failed to publish", response.Error())
+	}
+
+	return msg.Jsep, nil
+}
+
 func (handle *Handle) LeavePublisher(req *LeaveRequest) error {
 	msg, err := handle.Message(req, nil)
 	if err != nil {

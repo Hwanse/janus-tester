@@ -14,6 +14,7 @@ const (
 	TypeList    = "list"
 	TypeJoin    = "join"
 	TypeLeave   = "leave"
+	TypePublish = "publish"
 
 	// Response
 	TypeEvent          = "event"
@@ -78,7 +79,7 @@ type Publisher struct {
 	FeedID           uint64 `mapstructure:"id"`
 	DisplayName      string `mapstructure:"display"`
 	IsDummyPublisher bool   `mapstructure:"dummy"`
-	Streams          []Stream
+	Streams          []PublisherStreamInfo
 	IsTalking        bool `mapstructure:"talking"`
 }
 
@@ -89,7 +90,8 @@ type Attendee struct {
 }
 
 // Stream Participant's stream info
-type Stream struct {
+type PublisherStreamInfo struct {
+	// publisher list's stream field
 	MediaType   string `mapstructure:"type"`
 	MIndex      int    `mapstructure:"mindex"`
 	MID         int    `mapstructure:"mid"`
@@ -100,6 +102,26 @@ type Stream struct {
 	Simulcast   bool   `mapstructure:"simulcast"`
 	SVC         bool   `mapstructure:"svc"`
 	IsTalking   bool   `mapstructure:"talking"`
+}
+
+// Stream Subscriber가 구독할 Stream 정보
+type Stream struct {
+	FeedID     uint64 `json:"feed"`
+	MID        int    `json:"mid,omitempty"`
+	Crossrefid int    `json:"crossrefid,omitempty"`
+	// TODO Other fields ...
+}
+
+// SubscriberStreamInfo join subscriber's stream field
+type SubscriberStreamInfo struct {
+	MIndex      int    `json:"mindex,omitempty"`
+	MID         int    `json:"mid,omitempty"`
+	StreamType  string `json:"type,omitempty"`
+	FeedID      uint64 `json:"feed_id"`
+	FeedMID     int    `json:"feed_mid,omitempty"`
+	FeedDisplay string `json:"feed_display,omitempty"`
+	IsRelaySend bool   `json:"send,omitempty"`
+	IsReady     bool   `json:"ready,omitempty"`
 }
 
 // Room API Request
@@ -135,8 +157,41 @@ type JoinPublisherRequest struct {
 	Token       string               `json:"token,omitempty"`
 }
 
+type PublishRequest struct {
+	Request            VideoRoomRequestType `json:"request"`
+	AudioCodec         string               `json:"audiocodec,omitempty"`
+	VideoCodec         string               `json:"videocodec,omitempty"`
+	Bitrate            int                  `json:"bitrate,omitempty"`
+	Record             bool                 `json:"record,omitempty"`
+	FileName           string               `json:"filename,omitempty"`
+	Display            string               `json:"display,omitempty"`
+	AudioLevelAverage  int                  `json:"audio_level_average,omitempty"`
+	AudioActivePackets int                  `json:"audio_active_packets"`
+	Descriptions       []PublishDescription `json:"descriptions,omitempty"`
+}
+
+type UnPublishRequest struct {
+	Request VideoRoomRequestType `json:"request"`
+}
+
+type PublishDescription struct {
+	MID         int    `json:"mid"`
+	Description string `json:"description"`
+}
+
 type LeaveRequest struct {
 	Request VideoRoomRequestType `json:"request"`
+}
+
+// Subscriber API Request
+
+type JoinSubscriberRequest struct {
+	Request   VideoRoomRequestType `json:"request"`
+	RoomID    uint64               `json:"room"`
+	PeerType  string               `json:"ptype"`
+	UseMSID   bool                 `json:"use_msid,omitempty"`
+	PrivateID uint64               `json:"private_id,omitempty"`
+	Streams   []Stream             `json:"streams,omitempty"`
 }
 
 // Room API Response
@@ -181,8 +236,29 @@ type JoinPublisherResponse struct {
 	ErrorResponse         `mapstructure:",squash"`
 }
 
+type PublishResponse struct {
+	VideoRoomResponseType `mapstructure:",squash"`
+	Configured            string `mapstructure:"configured"`
+	ErrorResponse         `mapstructure:",squash"`
+}
+
+type UnPublishResponse struct {
+	VideoRoomResponseType `mapstructure:",squash"`
+	UnPublished           string `mapstructure:"unpublished"`
+	ErrorResponse         `mapstructure:",squash"`
+}
+
 type LeavePublisherResponse struct {
 	VideoRoomResponseType `mapstructure:",squash"`
 	Leaving               string `mapstructure:"leaving"`
+	ErrorResponse         `mapstructure:",squash"`
+}
+
+// Subscriber API Response
+
+type JoinSubscriberResponse struct {
+	VideoRoomResponseType `mapstructure:",squash"`
+	RoomID                uint64 `mapstructure:"room"`
+	Streams               []SubscriberStreamInfo
 	ErrorResponse         `mapstructure:",squash"`
 }
