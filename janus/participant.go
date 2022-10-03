@@ -35,7 +35,7 @@ func (handle *Handle) JoinSubscriber(req *JoinSubscriberRequest) (*JoinSubscribe
 	return &response, nil
 }
 
-func (handle *Handle) Publish(req *PublishRequest, jsep interface{}) (interface{}, error) {
+func (handle *Handle) Publish(req *PublishRequest, jsep interface{}) (map[string]interface{}, error) {
 	msg, err := handle.Message(req, jsep)
 	if err != nil {
 		return nil, WrapError("failed to publish", err.Error())
