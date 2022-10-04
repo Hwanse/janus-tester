@@ -129,4 +129,4 @@ go.work
 # ignore janus dependency files
 web/
 config/
-test/
+**.ogg
