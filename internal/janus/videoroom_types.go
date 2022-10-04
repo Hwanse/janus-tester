@@ -178,7 +178,7 @@ type PublishRequest struct {
 	FileName           string               `json:"filename,omitempty"`
 	Display            string               `json:"display,omitempty"`
 	AudioLevelAverage  int                  `json:"audio_level_average,omitempty"`
-	AudioActivePackets int                  `json:"audio_active_packets"`
+	AudioActivePackets int                  `json:"audio_active_packets,omitempty"`
 	Descriptions       []PublishDescription `json:"descriptions,omitempty"`
 }
 
