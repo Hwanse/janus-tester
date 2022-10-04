@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Hwanse/janus-tester/janus"
+	janus "github.com/Hwanse/janus-tester/internal/janus"
 	"github.com/pion/webrtc/v3"
 	"github.com/pion/webrtc/v3/pkg/media"
 	"github.com/pion/webrtc/v3/pkg/media/oggreader"
@@ -21,12 +21,14 @@ const (
 
 func main() {
 
-	_, err := os.Stat(audioFileName)
+	fileInfo, err := os.Stat(audioFileName)
 	haveAudioFile := !os.IsNotExist(err)
 
 	if !haveAudioFile {
 		panic("Could not find `" + audioFileName + "`")
 	}
+
+	log.Println("find audio file : ", fileInfo.Name())
 
 	// Prepare the configuration
 	config := webrtc.Configuration{
