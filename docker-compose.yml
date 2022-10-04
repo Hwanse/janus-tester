@@ -15,6 +15,7 @@ services:
 #      - "./config/janus.jcfg:/usr/local/etc/janus/janus.jcfg"
 #      - "./config/janus.eventhandler.sampleevh.jcfg:/usr/local/etc/janus/janus.eventhandler.sampleevh.jcfg"
       - "./config/janus.transport.websockets.jcfg:/usr/local/etc/janus/janus.transport.websockets.jcfg"
+      - "./config/janus.plugin.videoroom.jcfg:/usr/local/etc/janus/janus.plugin.videoroom.jcfg"
 
   web_demo:
     user: "root"
