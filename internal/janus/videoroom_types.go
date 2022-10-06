@@ -15,6 +15,7 @@ const (
 	TypeJoin    = "join"
 	TypeLeave   = "leave"
 	TypePublish = "publish"
+	TypeStart   = "start"
 
 	// Response
 	TypeEvent          = "event"
