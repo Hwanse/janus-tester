@@ -292,3 +292,11 @@ type LeaveSubscriberResponse struct {
 	Left                  string `mapstructure:"left"`
 	ErrorResponse         `mapstructure:",squash"`
 }
+
+// Videoroom Event Types
+type NewPublisherEvent struct {
+	VideoRoomResponseType `mapstructure:",squash"`
+	RoomID                uint64 `mapstructure:"room"`
+	Publishers            []Publisher
+	ErrorResponse         `mapstructure:",squash"`
+}
