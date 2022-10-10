@@ -57,7 +57,7 @@ func ConnectPeerConnectionAboutPublisher(p *Peer, jsep map[string]interface{}) e
 	req := janus.SubscribeStartRequest{Request: janus.TypeStart}
 	answerMap := map[string]interface{}{
 		"type":    answer.Type,
-		"sdp":     answer.SDP,
+		"sdp":     peerConnection.LocalDescription().SDP,
 		"trickle": false,
 	}
 
