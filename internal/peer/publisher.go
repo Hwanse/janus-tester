@@ -19,7 +19,7 @@ const (
 	oggPageDuration = time.Millisecond * 20
 )
 
-func PublishSampleFile(p *Peer) <-chan struct{} {
+func PublishSampleFile(ctx context.Context, p *Peer) <-chan struct{} {
 
 	doneChannel := make(chan struct{})
 	fileInfo, err := os.Stat(audioFileName)
@@ -47,8 +47,8 @@ func PublishSampleFile(p *Peer) <-chan struct{} {
 		panic(err)
 	}
 
-	iceConnectedCtx, iceConnectedCtxCancel := context.WithCancel(context.Background())
-	_, audioEndCtxCancel := context.WithCancel(context.Background())
+	iceConnectedCtx, iceConnectedCtxCancel := context.WithCancel(ctx)
+	_, audioEndCtxCancel := context.WithCancel(ctx)
 
 	if haveAudioFile {
 		// Create a audio track
@@ -156,24 +156,12 @@ func PublishSampleFile(p *Peer) <-chan struct{} {
 	// in a production application you should exchange ICE Candidates via OnICECandidate
 	<-gatherComplete
 
-	joinReq := &janus.JoinPublisherRequest{
-		Request:  janus.TypeJoin,
-		RoomID:   p.EnteredRoomID,
-		PeerType: janus.TypePublisher,
-	}
-	joinResp, err := p.Handle.JoinPublisher(joinReq)
-	if err != nil {
-		panic(err)
-	}
-
-	p.SetMyFeedID(joinResp.FeedID)
-
 	pubReq := &janus.PublishRequest{
 		Request: janus.TypePublish,
 	}
 	offerMap := map[string]interface{}{
-		"type":    offer.Type,
-		"sdp":     offer.SDP,
+		"type":    "offer",
+		"sdp":     peerConnection.LocalDescription().SDP,
 		"trickle": false,
 	}
 

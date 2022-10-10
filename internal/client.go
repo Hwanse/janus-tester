@@ -11,13 +11,13 @@ import (
 
 type Client struct {
 	*janus.Session
-	Peers []peer.Peer
+	Peers []*peer.Peer
 }
 
 func NewClient(session *janus.Session) Client {
 	return Client{
 		session,
-		make([]peer.Peer, 0),
+		make([]*peer.Peer, 0),
 	}
 }
 
@@ -34,7 +34,7 @@ func (c *Client) NewPeer(ctx context.Context, roomID uint64, peerType string) (*
 		Handle:        handle,
 		DestroyFunc:   cancel,
 	}
-	c.Peers = append(c.Peers, peer)
+	c.Peers = append(c.Peers, &peer)
 
 	return &peer, nil
 }
@@ -84,7 +84,7 @@ func (c *Client) WatchRoomEvent(ctx context.Context, p *peer.Peer) {
 					continue
 				}
 
-				if p.MyFeedID != event.Publishers[0].FeedID {
+				if len(event.Publishers) > 0 && p.MyFeedID != event.Publishers[0].FeedID {
 					subPeer, err := c.NewPeer(ctx, event.RoomID, janus.TypeSubscriber)
 					if err != nil {
 						log.Panic("failed to Create Peer ", err.Error())
@@ -132,6 +132,12 @@ func (c *Client) JoinRoom(ctx context.Context, roomID uint64) {
 	}
 }
 
+func (c *Client) TestPublishStream(ctx context.Context) {
+	p := c.FindMyPublisherPeer()
+	done := peer.PublishSampleFile(ctx, p)
+	<-done
+}
+
 func (c *Client) KeepConnection(ctx context.Context) {
 	for {
 		select {
@@ -140,4 +146,14 @@ func (c *Client) KeepConnection(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func (c *Client) FindMyPublisherPeer() *peer.Peer {
+	for _, p := range c.Peers {
+		if p.PeerType == janus.TypePublisher {
+			return p
+		}
+	}
+
+	return nil
 }
