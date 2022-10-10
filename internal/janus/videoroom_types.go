@@ -107,7 +107,7 @@ type PublisherStreamInfo struct {
 	// publisher list's stream field
 	MediaType   string `mapstructure:"type"`
 	MIndex      int    `mapstructure:"mindex"`
-	MID         int    `mapstructure:"mid"`
+	MID         string `mapstructure:"mid"`
 	IsDisabled  bool   `mapstructure:"disabled"`
 	Codec       string `mapstructure:"codec"`
 	Description string `mapstructure:"description"`

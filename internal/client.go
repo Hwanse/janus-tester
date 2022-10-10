@@ -107,7 +107,7 @@ func (c *Client) JoinRoom(ctx context.Context, roomID uint64) {
 	if err != nil {
 		panic(err)
 	}
-	c.WatchRoomEvent(ctx, pubPeer)
+	go c.WatchRoomEvent(ctx, pubPeer)
 
 	joinReq := &janus.JoinPublisherRequest{
 		Request:  janus.TypeJoin,
@@ -129,5 +129,15 @@ func (c *Client) JoinRoom(ctx context.Context, roomID uint64) {
 		}
 
 		subPeer.SubscribeToPublisher(pub.FeedID)
+	}
+}
+
+func (c *Client) KeepConnection(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("client connection closed")
+			return
+		}
 	}
 }
