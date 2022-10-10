@@ -1,14 +1,12 @@
 package peer
 
 import (
-	"context"
 	"fmt"
 	"github.com/Hwanse/janus-tester/internal/janus"
 	"github.com/pion/webrtc/v3"
-	"log"
 )
 
-func SubscriberPeer(cancel context.CancelFunc, handle *janus.Handle, jsep map[string]interface{}) error {
+func ConnectPeerConnectionAboutPublisher(p *Peer, jsep map[string]interface{}) error {
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
 			{
@@ -27,7 +25,7 @@ func SubscriberPeer(cancel context.CancelFunc, handle *janus.Handle, jsep map[st
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		fmt.Printf("Connection State has changed %s \n", connectionState.String())
 		if connectionState == webrtc.ICEConnectionStateConnected {
-			cancel()
+			p.DestroyFunc()
 		}
 	})
 
@@ -63,79 +61,10 @@ func SubscriberPeer(cancel context.CancelFunc, handle *janus.Handle, jsep map[st
 		"trickle": false,
 	}
 
-	err = handle.SubscribeStart(&req, answerMap)
+	err = p.Handle.SubscribeStart(&req, answerMap)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func JoinInRoom(roomID uint64) {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	janusURL := fmt.Sprintf("ws://%s:%s/", janus.JanusLocalHost, janus.JanusWebsocketPort)
-	gateway, err := janus.WsConnect(janusURL)
-	if err != nil {
-		panic(err)
-	}
-
-	session, err := gateway.Create()
-	if err != nil {
-		panic(err)
-	}
-
-	handle, err := session.Attach(janus.VideoRoomPluginName)
-	if err != nil {
-		panic(err)
-	}
-
-	go sessionKeepAliveLoop(ctx, session)
-	go watchHandle(ctx, handle)
-
-	joinReq := &janus.JoinPublisherRequest{
-		Request:  janus.TypeJoin,
-		RoomID:   roomID,
-		PeerType: janus.TypePublisher,
-	}
-
-	joinResp, err := handle.JoinPublisher(joinReq)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, p := range joinResp.Publishers {
-		session, err := gateway.Create()
-		if err != nil {
-			panic(err)
-		}
-
-		handle, err := session.Attach(janus.VideoRoomPluginName)
-		if err != nil {
-			panic(err)
-		}
-
-		go sessionKeepAliveLoop(ctx, session)
-		go watchHandle(ctx, handle)
-
-		req := janus.JoinSubscriberRequest{
-			Request:  janus.TypeJoin,
-			RoomID:   roomID,
-			PeerType: janus.TypeSubscriber,
-			Streams:  []janus.Stream{{FeedID: p.FeedID}},
-		}
-		response, err := handle.JoinSubscriber(&req)
-		if err != nil {
-			log.Panic("failed to join subscriber : ", err.Error())
-			break
-		}
-
-		err = SubscriberPeer(cancel, handle, response.Jsep)
-		if err != nil {
-			log.Panic("failed to join subscriber : ", err.Error())
-			break
-		}
-	}
-
-	select {}
 }

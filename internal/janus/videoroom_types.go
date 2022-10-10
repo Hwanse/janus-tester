@@ -107,7 +107,7 @@ type PublisherStreamInfo struct {
 	// publisher list's stream field
 	MediaType   string `mapstructure:"type"`
 	MIndex      int    `mapstructure:"mindex"`
-	MID         int    `mapstructure:"mid"`
+	MID         string `mapstructure:"mid"`
 	IsDisabled  bool   `mapstructure:"disabled"`
 	Codec       string `mapstructure:"codec"`
 	Description string `mapstructure:"description"`
@@ -290,5 +290,13 @@ type SubscribeStartResponse struct {
 type LeaveSubscriberResponse struct {
 	VideoRoomResponseType `mapstructure:",squash"`
 	Left                  string `mapstructure:"left"`
+	ErrorResponse         `mapstructure:",squash"`
+}
+
+// Videoroom Event Types
+type NewPublisherEvent struct {
+	VideoRoomResponseType `mapstructure:",squash"`
+	RoomID                uint64 `mapstructure:"room"`
+	Publishers            []Publisher
 	ErrorResponse         `mapstructure:",squash"`
 }
