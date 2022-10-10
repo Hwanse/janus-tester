@@ -134,8 +134,7 @@ func (c *Client) JoinRoom(ctx context.Context, roomID uint64) {
 
 func (c *Client) TestPublishStream(ctx context.Context) {
 	p := c.FindMyPublisherPeer()
-	done := peer.PublishSampleFile(ctx, p)
-	<-done
+	peer.PublishSampleFile(ctx, p)
 }
 
 func (c *Client) KeepConnection(ctx context.Context) {
