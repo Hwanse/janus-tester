@@ -19,7 +19,7 @@ const (
 	oggPageDuration = time.Millisecond * 20
 )
 
-func PublishPeer() <-chan struct{} {
+func PublishSampleFile(ctx context.Context, p *Peer) <-chan struct{} {
 
 	doneChannel := make(chan struct{})
 	fileInfo, err := os.Stat(audioFileName)
@@ -47,8 +47,8 @@ func PublishPeer() <-chan struct{} {
 		panic(err)
 	}
 
-	iceConnectedCtx, iceConnectedCtxCancel := context.WithCancel(context.Background())
-	audioEndCtx, audioEndCtxCancel := context.WithCancel(context.Background())
+	iceConnectedCtx, iceConnectedCtxCancel := context.WithCancel(ctx)
+	_, audioEndCtxCancel := context.WithCancel(ctx)
 
 	if haveAudioFile {
 		// Create a audio track
@@ -156,35 +156,6 @@ func PublishPeer() <-chan struct{} {
 	// in a production application you should exchange ICE Candidates via OnICECandidate
 	<-gatherComplete
 
-	janusURL := fmt.Sprintf("ws://%s:%s/", janus.JanusLocalHost, janus.JanusWebsocketPort)
-	gateway, err := janus.WsConnect(janusURL)
-	if err != nil {
-		panic(err)
-	}
-
-	session, err := gateway.Create()
-	if err != nil {
-		panic(err)
-	}
-
-	handle, err := session.Attach(janus.VideoRoomPluginName)
-	if err != nil {
-		panic(err)
-	}
-
-	go sessionKeepAliveLoop(audioEndCtx, session)
-	go watchHandle(audioEndCtx, handle)
-
-	joinReq := &janus.JoinPublisherRequest{
-		Request:  janus.TypeJoin,
-		RoomID:   1234,
-		PeerType: janus.TypePublisher,
-	}
-	_, err = handle.JoinPublisher(joinReq)
-	if err != nil {
-		panic(err)
-	}
-
 	pubReq := &janus.PublishRequest{
 		Request: janus.TypePublish,
 	}
@@ -194,7 +165,7 @@ func PublishPeer() <-chan struct{} {
 		"trickle": false,
 	}
 
-	pubResponse, err := handle.Publish(pubReq, offerMap)
+	pubResponse, err := p.Handle.Publish(pubReq, offerMap)
 	if err != nil {
 		log.Println("failed to publish request : ", err.Error())
 		close(doneChannel)
@@ -213,47 +184,4 @@ func PublishPeer() <-chan struct{} {
 	}
 
 	return doneChannel
-}
-
-func sessionKeepAliveLoop(ctx context.Context, session *janus.Session) {
-	tick := time.NewTicker(20 * time.Second)
-	defer tick.Stop()
-
-	for {
-		select {
-		case <-tick.C:
-			if _, err := session.KeepAlive(); err != nil {
-				log.Println("failed to session keepalive : ", err.Error())
-				return
-			}
-
-		case <-ctx.Done():
-			return
-		}
-	}
-}
-
-func watchHandle(ctx context.Context, handle *janus.Handle) {
-	// wait for event
-	for {
-		select {
-		case <-ctx.Done():
-			return
-
-		default:
-			msg := <-handle.Events
-			switch msg := msg.(type) {
-			case *janus.SlowLinkMsg:
-				log.Println("SlowLinkMsg type ", handle.ID)
-			case *janus.MediaMsg:
-				log.Println("MediaEvent type", msg.Type, " receiving ", msg.Receiving)
-			case *janus.WebRTCUpMsg:
-				log.Println("WebRTCUp type ", handle.ID)
-			case *janus.HangupMsg:
-				log.Println("HangupEvent type ", handle.ID)
-			case *janus.EventMsg:
-				log.Printf("EventMsg %+v", msg.Plugindata.Data)
-			}
-		}
-	}
 }
