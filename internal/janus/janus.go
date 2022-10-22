@@ -143,19 +143,16 @@ func passMsg(ch chan interface{}, msg interface{}) {
 func (gateway *Gateway) ping() {
 	ticker := time.NewTicker(time.Second * 30)
 	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			err := gateway.conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(20*time.Second))
-			if err != nil {
-				select {
-				case gateway.errors <- err:
-				default:
-					log.Println("ping:", err)
-				}
-
-				return
+	for range ticker.C {
+		err := gateway.conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(20*time.Second))
+		if err != nil {
+			select {
+			case gateway.errors <- err:
+			default:
+				log.Println("ping:", err)
 			}
+
+			return
 		}
 	}
 }
@@ -258,7 +255,7 @@ func (gateway *Gateway) recv() {
 			}
 			gateway.Unlock()
 			if transaction == nil {
-				// Error()
+				// TODO Error Handling
 			}
 
 			// Pass msg

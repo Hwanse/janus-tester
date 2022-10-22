@@ -43,10 +43,7 @@ func (err *ErrorResponse) Error() string {
 }
 
 func isUnexpectedResponse(responseKey, expectKey string) bool {
-	if responseKey != expectKey {
-		return true
-	}
-	return false
+	return responseKey != expectKey
 }
 
 func WrapError(description string, errText string) error {
@@ -128,7 +125,7 @@ type Stream struct {
 // SubscriberStreamInfo join subscriber's stream field
 type SubscriberStreamInfo struct {
 	MIndex      int    `json:"mindex,omitempty"`
-	MID         int    `json:"mid,omitempty"`
+	MID         string `json:"mid,omitempty"`
 	StreamType  string `json:"type,omitempty"`
 	FeedID      uint64 `json:"feed_id"`
 	FeedMID     int    `json:"feed_mid,omitempty"`

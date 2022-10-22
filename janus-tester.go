@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/Hwanse/janus-tester/internal"
 	"github.com/Hwanse/janus-tester/internal/janus"
+	"log"
+	"math/rand"
 	"os"
 	"sync"
 	"time"
@@ -32,26 +34,8 @@ func main() {
 		return
 	}
 
-	duration := time.Duration(scenario.Duration)
+	fmt.Printf("%+v \n", scenario)
 
-	ctx, _ := context.WithTimeout(context.Background(), time.Second*duration)
-
-	wg := &sync.WaitGroup{}
-	for i := 0; i < scenario.SubscriberCount; i++ {
-		wg.Add(1)
-		go AttachSubscriber(ctx, wg)
-	}
-
-	wg.Wait()
-}
-
-type Scenario struct {
-	SubscriberCount int `json:"subscriber_count"`
-	Duration        int
-	Description     string
-}
-
-func AttachSubscriber(ctx context.Context, wg *sync.WaitGroup) {
 	url := fmt.Sprintf("ws://%s:%s/", janus.JanusLocalHost, janus.JanusWebsocketPort)
 	gateway, err := janus.WsConnect(url)
 	if err != nil {
@@ -65,10 +49,137 @@ func AttachSubscriber(ctx context.Context, wg *sync.WaitGroup) {
 		return
 	}
 
+	go func(ctx context.Context, session *janus.Session) {
+		tick := time.NewTicker(20 * time.Second)
+		defer tick.Stop()
+
+		for {
+			select {
+			case <-tick.C:
+				if _, err := session.KeepAlive(); err != nil {
+					log.Println("failed to session keepalive : ", err.Error())
+					return
+				}
+
+			case <-ctx.Done():
+				return
+			}
+		}
+	}(context.Background(), session)
+
+	handle, err := session.Attach(janus.VideoRoomPluginName)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	duration := time.Duration(scenario.Duration)
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*duration)
+	roomList := make([]uint64, 0)
+	wg := &sync.WaitGroup{}
+
+	for _, roomScenario := range scenario.RoomScenarios {
+		roomID, err := CreateRoom(handle, roomScenario.PublisherLimitCount)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		roomList = append(roomList, roomID)
+
+		for i := 0; i < roomScenario.ActivePublisherCount; i++ {
+			wg.Add(1)
+			go AttachPublisher(ctx, gateway, roomID, wg)
+		}
+
+		for i := 0; i < roomScenario.SubscriberCount; i++ {
+			wg.Add(1)
+			go AttachSubscriber(ctx, gateway, roomID, wg)
+		}
+	}
+
+	wg.Wait()
+
+	for _, id := range roomList {
+		RemoveRoom(handle, id)
+	}
+}
+
+type Scenario struct {
+	Duration      int
+	Description   string
+	RoomScenarios []RoomScenario `json:"room_scenarios"`
+}
+
+type RoomScenario struct {
+	PublisherLimitCount  int `json:"publisher_limit_count"`
+	ActivePublisherCount int `json:"active_publisher_count"`
+	SubscriberCount      int `json:"subscriber_count"`
+	JoinTimeInterval     int `json:"join_time_interval"`
+}
+
+func CreateRoom(handle *janus.Handle, publisherLimitCount int) (uint64, error) {
+	rand.Seed(time.Now().UnixNano())
+
+	roomID := uint64(rand.Uint32())
+	req := &janus.CreateRoomRequest{
+		Request: janus.TypeCreate,
+		Room: janus.Room{
+			RoomID:              roomID,
+			IsPrivate:           false,
+			PublisherLimitCount: publisherLimitCount,
+			UseRecord:           false,
+			NotifyJoining:       false,
+			Bitrate:             128000,
+			BitrateCap:          false,
+		},
+	}
+
+	err := handle.CreateRoom(req)
+	if err != nil {
+		return 0, err
+	}
+
+	return roomID, nil
+}
+
+func RemoveRoom(handle *janus.Handle, roomID uint64) error {
+	req := &janus.DestroyRoomRequest{
+		Request: janus.TypeDestroy,
+		RoomID:  roomID,
+	}
+
+	return handle.DestroyRoom(req)
+}
+
+func AttachSubscriber(ctx context.Context, gateway *janus.Gateway, roomID uint64, wg *sync.WaitGroup) {
+	session, err := gateway.Create()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
 	client := internal.NewClient(session)
 
-	client.JoinRoom(ctx, 1234)
+	client.JoinRoom(ctx, roomID)
 	go client.KeepAliveLoop(ctx)
+
+	client.KeepConnection(ctx)
+	wg.Done()
+}
+
+func AttachPublisher(ctx context.Context, gateway *janus.Gateway, roomID uint64, wg *sync.WaitGroup) {
+	session, err := gateway.Create()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	client := internal.NewClient(session)
+
+	client.JoinRoom(ctx, roomID)
+	go client.KeepAliveLoop(ctx)
+
+	client.TestPublishStream(ctx)
 
 	client.KeepConnection(ctx)
 	wg.Done()

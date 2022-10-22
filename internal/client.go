@@ -138,12 +138,9 @@ func (c *Client) TestPublishStream(ctx context.Context) {
 }
 
 func (c *Client) KeepConnection(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			log.Println("client connection closed")
-			return
-		}
+	for range ctx.Done() {
+		log.Println("client connection closed")
+		return
 	}
 }
 

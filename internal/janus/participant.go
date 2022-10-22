@@ -12,6 +12,10 @@ func (handle *Handle) JoinPublisher(req *JoinPublisherRequest) (*JoinPublisherRe
 
 	response := JoinPublisherResponse{}
 	err = mapstructure.Decode(msg.Plugindata.Data, &response)
+	if err != nil {
+		return nil, WrapError("failed to join the publisher", err.Error())
+	}
+
 	if isUnexpectedResponse(response.VideoRoomResponseType.Type, SuccessJoin) {
 		return nil, WrapError("failed to join the publisher", response.Error())
 	}
@@ -27,8 +31,12 @@ func (handle *Handle) JoinSubscriber(req *JoinSubscriberRequest) (*JoinSubscribe
 
 	response := JoinSubscriberResponse{}
 	err = mapstructure.Decode(msg.Plugindata.Data, &response)
+	if err != nil {
+		return nil, WrapError("failed to join the subscriber", err.Error())
+	}
+
 	if isUnexpectedResponse(response.VideoRoomResponseType.Type, SuccessAttached) {
-		return nil, WrapError("failed to join the publisher", response.Error())
+		return nil, WrapError("failed to join the subscriber", response.Error())
 	}
 	response.Jsep = msg.Jsep
 
@@ -43,6 +51,10 @@ func (handle *Handle) Publish(req *PublishRequest, jsep interface{}) (map[string
 
 	response := PublishResponse{}
 	err = mapstructure.Decode(msg.Plugindata.Data, &response)
+	if err != nil {
+		return nil, WrapError("failed to publish", err.Error())
+	}
+
 	if isUnexpectedResponse(response.VideoRoomResponseType.Type, TypeEvent) ||
 		isUnexpectedResponse(response.Configured, OK) {
 		return nil, WrapError("failed to publish", response.Error())
@@ -54,14 +66,18 @@ func (handle *Handle) Publish(req *PublishRequest, jsep interface{}) (map[string
 func (handle *Handle) SubscribeStart(req *SubscribeStartRequest, jsep interface{}) error {
 	msg, err := handle.Message(req, jsep)
 	if err != nil {
-		return WrapError("failed to subscribe", err.Error())
+		return WrapError("failed to start subscribe", err.Error())
 	}
 
 	response := SubscribeStartResponse{}
 	err = mapstructure.Decode(msg.Plugindata.Data, &response)
+	if err != nil {
+		return WrapError("failed to start subscribe", err.Error())
+	}
+
 	if isUnexpectedResponse(response.VideoRoomResponseType.Type, TypeEvent) ||
 		isUnexpectedResponse(response.Started, OK) {
-		return WrapError("failed to subscribe", response.Error())
+		return WrapError("failed to start subscribe", response.Error())
 	}
 
 	return nil
@@ -74,7 +90,10 @@ func (handle *Handle) LeavePublisher(req *LeaveRequest) error {
 	}
 
 	response := LeavePublisherResponse{}
-	mapstructure.Decode(msg.Plugindata.Data, &response)
+	err = mapstructure.Decode(msg.Plugindata.Data, &response)
+	if err != nil {
+		return WrapError("failed to leave the room", err.Error())
+	}
 	if isUnexpectedResponse(response.VideoRoomResponseType.Type, TypeEvent) ||
 		isUnexpectedResponse(response.Leaving, OK) {
 		return WrapError("failed to leave the room", response.Error())
@@ -90,7 +109,10 @@ func (handle *Handle) LeaveSubscriber(req *LeaveRequest) error {
 	}
 
 	response := LeaveSubscriberResponse{}
-	mapstructure.Decode(msg.Plugindata.Data, &response)
+	err = mapstructure.Decode(msg.Plugindata.Data, &response)
+	if err != nil {
+		return WrapError("failed to leave the room", err.Error())
+	}
 	if isUnexpectedResponse(response.VideoRoomResponseType.Type, TypeEvent) ||
 		isUnexpectedResponse(response.Left, OK) {
 		return WrapError("failed to leave the room", response.Error())
