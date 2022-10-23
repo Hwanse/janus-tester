@@ -4,7 +4,13 @@
     {
       "publisher_limit_count" : 8,
       "active_publisher_count" : 2,
-      "subscriber_count" : 3
+      "subscriber_count" : 3,
+      "sequence": [
+        {
+          "command": "audio_off",
+          "wait_time": 30
+        }
+      ]
     },
     {
       "publisher_limit_count" : 8,

@@ -8,14 +8,15 @@ const (
 	TypeSubscriber      = "subscriber"
 
 	// Request
-	TypeCreate  = "create"
-	TypeDestroy = "destroy"
-	TypeExists  = "exists"
-	TypeList    = "list"
-	TypeJoin    = "join"
-	TypeLeave   = "leave"
-	TypePublish = "publish"
-	TypeStart   = "start"
+	TypeCreate    = "create"
+	TypeDestroy   = "destroy"
+	TypeExists    = "exists"
+	TypeList      = "list"
+	TypeJoin      = "join"
+	TypeLeave     = "leave"
+	TypePublish   = "publish"
+	TypeUnpublish = "unpublish"
+	TypeStart     = "start"
 
 	// Response
 	TypeEvent          = "event"
