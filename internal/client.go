@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"github.com/Hwanse/janus-tester/internal/janus"
 	"github.com/Hwanse/janus-tester/internal/peer"
 	"github.com/mitchellh/mapstructure"
@@ -129,6 +130,29 @@ func (c *Client) JoinRoom(ctx context.Context, roomID uint64) {
 		}
 
 		subPeer.SubscribeToPublisher(pub.FeedID)
+	}
+}
+
+func (c *Client) LeaveRoom() {
+	for _, peer := range c.Peers {
+		HandleLeavePeer(peer)
+		peer.Handle.Detach()
+	}
+}
+
+func HandleLeavePeer(peer *peer.Peer) {
+	var err error
+
+	switch peer.PeerType {
+	case janus.TypePublisher:
+		err = peer.Handle.LeavePublisher(&janus.LeaveRequest{Request: janus.TypeLeave})
+	case janus.TypeSubscriber:
+		err = peer.Handle.LeaveSubscriber(&janus.LeaveRequest{Request: janus.TypeLeave})
+	}
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
 	}
 }
 
