@@ -10,6 +10,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"os/signal"
 	"sync"
 	"time"
 )
@@ -73,10 +74,11 @@ func main() {
 		return
 	}
 
-	duration := time.Duration(scenario.Duration)
-	ctx, _ := context.WithTimeout(context.Background(), time.Second*duration)
+	ctx, destroy := context.WithCancel(context.Background())
 	roomList := make([]uint64, 0)
 	wg := &sync.WaitGroup{}
+	endSignal := make(chan os.Signal, 1)
+	signal.Notify(endSignal, os.Interrupt)
 
 	for _, roomScenario := range scenario.RoomScenarios {
 		roomID, err := CreateRoom(handle, roomScenario.PublisherLimitCount)
@@ -97,6 +99,10 @@ func main() {
 		}
 	}
 
+	<-endSignal
+	log.Println("process end signal, destroy all peers & rooms")
+
+	destroy()
 	wg.Wait()
 
 	for _, id := range roomList {
@@ -105,7 +111,6 @@ func main() {
 }
 
 type Scenario struct {
-	Duration      int
 	Description   string
 	RoomScenarios []RoomScenario `json:"room_scenarios"`
 }
@@ -164,7 +169,10 @@ func AttachSubscriber(ctx context.Context, gateway *janus.Gateway, roomID uint64
 	go client.KeepAliveLoop(ctx)
 
 	client.KeepConnection(ctx)
-	wg.Done()
+	defer func() {
+		client.LeaveRoom()
+		wg.Done()
+	}()
 }
 
 func AttachPublisher(ctx context.Context, gateway *janus.Gateway, roomID uint64, wg *sync.WaitGroup) {
@@ -182,5 +190,8 @@ func AttachPublisher(ctx context.Context, gateway *janus.Gateway, roomID uint64,
 	client.TestPublishStream(ctx)
 
 	client.KeepConnection(ctx)
-	wg.Done()
+	defer func() {
+		client.LeaveRoom()
+		wg.Done()
+	}()
 }
