@@ -161,6 +161,11 @@ func (c *Client) TestPublishStream(ctx context.Context) {
 	peer.PublishSampleFile(ctx, p)
 }
 
+func (c *Client) UnpublishStream() {
+	p := c.FindMyPublisherPeer()
+	p.Handle.UnPublish(&janus.UnPublishRequest{Request: janus.TypeUnpublish})
+}
+
 func (c *Client) KeepConnection(ctx context.Context) {
 	for range ctx.Done() {
 		log.Println("client connection closed")
