@@ -63,6 +63,26 @@ func (handle *Handle) Publish(req *PublishRequest, jsep interface{}) (map[string
 	return msg.Jsep, nil
 }
 
+func (handle *Handle) UnPublish(req *UnPublishRequest) error {
+	msg, err := handle.Message(req, nil)
+	if err != nil {
+		return WrapError("failed to unpublish", err.Error())
+	}
+
+	response := UnPublishResponse{}
+	err = mapstructure.Decode(msg.Plugindata.Data, &response)
+	if err != nil {
+		return WrapError("failed to unpublish", err.Error())
+	}
+
+	if isUnexpectedResponse(response.VideoRoomResponseType.Type, TypeEvent) ||
+		isUnexpectedResponse(response.UnPublished, OK) {
+		return WrapError("failed to unpublish", response.Error())
+	}
+
+	return nil
+}
+
 func (handle *Handle) SubscribeStart(req *SubscribeStartRequest, jsep interface{}) error {
 	msg, err := handle.Message(req, jsep)
 	if err != nil {

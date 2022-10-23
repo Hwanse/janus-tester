@@ -90,7 +90,7 @@ func main() {
 
 		for i := 0; i < roomScenario.ActivePublisherCount; i++ {
 			wg.Add(1)
-			go AttachPublisher(ctx, gateway, roomID, wg)
+			go AttachPublisher(ctx, gateway, roomID, wg, roomScenario.Sequences)
 		}
 
 		for i := 0; i < roomScenario.SubscriberCount; i++ {
@@ -116,10 +116,16 @@ type Scenario struct {
 }
 
 type RoomScenario struct {
-	PublisherLimitCount  int `json:"publisher_limit_count"`
-	ActivePublisherCount int `json:"active_publisher_count"`
-	SubscriberCount      int `json:"subscriber_count"`
-	JoinTimeInterval     int `json:"join_time_interval"`
+	PublisherLimitCount  int        `json:"publisher_limit_count"`
+	ActivePublisherCount int        `json:"active_publisher_count"`
+	SubscriberCount      int        `json:"subscriber_count"`
+	JoinTimeInterval     int        `json:"join_time_interval"`
+	Sequences            []Sequence `json:"sequence"`
+}
+
+type Sequence struct {
+	Command  string `json:"command"`
+	WaitTime int    `json:"wait_time"`
 }
 
 func CreateRoom(handle *janus.Handle, publisherLimitCount int) (uint64, error) {
@@ -175,7 +181,7 @@ func AttachSubscriber(ctx context.Context, gateway *janus.Gateway, roomID uint64
 	}()
 }
 
-func AttachPublisher(ctx context.Context, gateway *janus.Gateway, roomID uint64, wg *sync.WaitGroup) {
+func AttachPublisher(ctx context.Context, gateway *janus.Gateway, roomID uint64, wg *sync.WaitGroup, sequences []Sequence) {
 	session, err := gateway.Create()
 	if err != nil {
 		fmt.Println(err.Error())
@@ -189,9 +195,34 @@ func AttachPublisher(ctx context.Context, gateway *janus.Gateway, roomID uint64,
 
 	client.TestPublishStream(ctx)
 
+	for _, seq := range sequences {
+		go TestSequence(ctx, &seq, &client)
+	}
+
 	client.KeepConnection(ctx)
 	defer func() {
 		client.LeaveRoom()
 		wg.Done()
 	}()
+}
+
+func TestSequence(ctx context.Context, seq *Sequence, client *internal.Client) {
+	waitTime := time.Duration(seq.WaitTime)
+	timer := time.NewTimer(waitTime * time.Second)
+
+	for {
+		select {
+		case <-ctx.Done():
+			if !timer.Stop() {
+				<-timer.C
+			}
+			return
+
+		case <-timer.C:
+			if seq.Command == "audio_off" {
+				client.UnpublishStream()
+			}
+			return
+		}
+	}
 }
